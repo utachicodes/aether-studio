@@ -82,7 +82,8 @@ body {
 }
 
 .pro-btn-active {
-  @apply bg-accent/20 border-accent/60 text-accent glow-accent;
+  @apply bg-accent/20 border-accent/60 text-accent;
+  box-shadow: 0 0 15px var(--color-accent-glow);
 }
 
 /* Hierarchy Tree Item */

@@ -80,13 +80,20 @@ pip install -r requirements.txt
 
 ---
 
-## Scientific Credits & Acknowledgments
-Aether-Scan Studio is an evolution of research in on-the-fly reconstruction.
+## 🛠 Tech Stack
 
-### Original Research Developers
-*   [Andreas Meuleman](https://ameuleman.github.io/), [Ishaan Shah](https://ishaanshah.xyz/), [Alexandre Lanvin](https://scholar.google.com/citations?hl=fr&user=e1s7mGsAAAAJ), [Bernhard Kerbl](https://snosixtyboo.github.io/), [George Drettakis](https://www-sop.inria.fr/members/George.Drettakis/)
-
-*Research facilitated by the European Research Council (ERC) Advanced Grant NERPHYS and the OPAL infrastructure of the Université Côte d'Azur.*
+![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Three.js](https://img.shields.io/badge/Three.js-black?style=for-the-badge&logo=threedotjs&logoColor=white)
+![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)
+![CUDA](https://img.shields.io/badge/CUDA-76B900?style=for-the-badge&logo=nvidia&logoColor=white)
 
 ---
-**Maintained by UtachiLabs.**
+
+## 🏗 Operations
+
+### Finalize Reconstruction
+Aether-Scan Studio is an advanced neural reconstruction platform built for the next generation of spatial intelligence.
+
+Developed and Maintained by **Abdou @ utachicodes**.

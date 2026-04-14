@@ -139,7 +139,5 @@ export default function Blueprint({ onSelectHotspot }: { onSelectHotspot: (id: s
       <div className="absolute inset-0 pointer-events-none border-[64px] border-background z-10" />
       <div className="absolute inset-0 pointer-events-none border border-white/5 z-0" />
     </div>
-
-    </div>
   );
 }
