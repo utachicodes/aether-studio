@@ -59,13 +59,39 @@ async def upload_data(background_tasks: BackgroundTasks, file: UploadFile = File
         with open(zip_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            images_dir = os.path.join(manager.path, "images")
-            os.makedirs(images_dir, exist_ok=True)
-            zip_ref.extractall(images_dir)
+        manager.write_log("ZIP_UPLOADED_EXTRACTING")
+        valid_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
         
-        manager.write_log("IMAGES_EXTRACTED_FROM_ZIP")
-        background_tasks.add_task(run_processing_pipeline, session_id, skip_extraction=True)
+        try:
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                temp_extract = os.path.join(manager.path, "temp_extract")
+                os.makedirs(temp_extract, exist_ok=True)
+                zip_ref.extractall(temp_extract)
+                
+                images_dir = os.path.join(manager.path, "images")
+                os.makedirs(images_dir, exist_ok=True)
+                
+                image_count = 0
+                for root, _, files in os.walk(temp_extract):
+                    for f in sorted(files):
+                        if os.path.splitext(f)[1].lower() in valid_extensions:
+                            # Normalize filename for consistent sorting in the pipeline
+                            new_name = f"view_{image_count:05d}{os.path.splitext(f)[1].lower()}"
+                            shutil.move(os.path.join(root, f), os.path.join(images_dir, new_name))
+                            image_count += 1
+                
+                # Cleanup
+                shutil.rmtree(temp_extract)
+                
+                if image_count == 0:
+                    manager.write_log("ERROR: No valid images found in ZIP")
+                    return {"error": "No valid images (.jpg, .png, etc.) found in the uploaded ZIP."}
+                
+                manager.write_log(f"IMAGES_READY: {image_count} images prepared from ZIP")
+                background_tasks.add_task(run_processing_pipeline, session_id, skip_extraction=True)
+        except Exception as e:
+            manager.write_log(f"ERROR: ZIP processing failed: {str(e)}")
+            return {"error": f"Failed to process ZIP: {str(e)}"}
     else:
         video_path = os.path.join(manager.path, "input_video.mp4")
         with open(video_path, "wb") as buffer:
