@@ -42,6 +42,10 @@ export default function Home() {
   const [selectedNode, setSelectedNode] = useState<string>("rdnc-field");
   const [activeTab, setActiveTab] = useState("Train");
   const [currentTime, setCurrentTime] = useState("0:04 / 0:35");
+  const [uploading, setUploading] = useState(false);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const logEndRef = useRef<HTMLDivElement>(null);
   
   // Workstation Parameters (Functional States)
   const [params, setParams] = useState({
@@ -54,6 +58,43 @@ export default function Home() {
     stopTraining: 30,
     storeContext: true
   });
+
+  // Auto-scroll logs
+  useEffect(() => {
+    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs]);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch(`${API_BASE}/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.session_id) {
+        setActiveSession(data.session_id);
+        const updated = await fetch(`${API_BASE}/sessions`);
+        const sessionData = await updated.json();
+        setSessions(sessionData.sessions || []);
+      }
+    } catch (err) {
+      console.error("Upload failed", err);
+    } finally {
+      setUploading(false);
+      e.target.value = ""; // Reset input
+    }
+  };
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -96,7 +137,19 @@ export default function Home() {
              </div>
              <span className="text-[11px] font-black uppercase tracking-widest text-foreground">Aether-Scan <span className="text-accent">Studio</span></span>
           </div>
-          <UtilityButton icon={<FolderOpen size={14}/>} label="Import" />
+          <UtilityButton 
+            icon={<FolderOpen size={14}/>} 
+            label={uploading ? "Uploading..." : "Import"} 
+            onClick={handleImportClick} 
+            disabled={uploading}
+          />
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept=".zip,.mp4" 
+            onChange={handleFileChange} 
+          />
           <UtilityButton icon={<Play size={14}/>} label="Training..." active />
           <UtilityButton icon={<Camera size={14}/>} label="Viewports" />
           <UtilityButton icon={<Layers size={14}/>} label="Render" />
@@ -177,14 +230,34 @@ export default function Home() {
            <div className="h-[380px] glass-panel rounded-2xl flex flex-col overflow-hidden">
               <div className="pro-header rounded-t-2xl">Visual Workspace</div>
               <ProTabGroup 
-                 tabs={["Build", "Context", "Tools", "Graph"]} 
-                 activeTab={activeTab === "Train" ? "Build" : activeTab} 
+                 tabs={["Build", "Console", "Tools", "Graph"]} 
+                 activeTab={activeTab === "Train" || activeTab === "Build" ? "Build" : activeTab} 
                  onTabClick={setActiveTab} 
               />
               <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-5 bg-black/5">
-                 {selectedNode === "rdnc-field" && activeTab === "Train" && (
-                    <div className="flex flex-col">
-                       <ParameterGroup title="Model Profile">
+                 {activeTab === "Console" ? (
+                    <div className="flex flex-col gap-1 font-mono text-[9px] text-foreground/40 leading-tight h-full">
+                       {logs.length > 0 ? (
+                          logs.map((log, i) => (
+                             <div key={i} className="flex gap-2">
+                                <span className="text-accent/40 shrink-0">[{i}]</span>
+                                <span className={cn(
+                                   log.includes("ERROR") ? "text-red-400" : 
+                                   log.includes("COMPLETE") ? "text-green-400" : 
+                                   "text-foreground/60"
+                                )}>{log}</span>
+                             </div>
+                          ))
+                       ) : (
+                          <div className="flex flex-col items-center justify-center h-full opacity-20 italic">
+                             Waiting for telemetry data...
+                          </div>
+                       )}
+                       <div ref={logEndRef} />
+                    </div>
+                 ) : selectedNode === "rdnc-field" && (
+                    <div className="flex flex-col gap-4">
+                       <ParameterGroup title="Workstation Profile">
                           <div className="grid grid-cols-[100px_1fr] items-center gap-2">
                              <span className="text-[10px] text-foreground/40 font-mono uppercase">Profile</span>
                              <div className="pro-input flex justify-between items-center cursor-pointer">
@@ -299,14 +372,19 @@ export default function Home() {
 }
 
 /* Helper Components for Premium Studio GUI */
-function UtilityButton({ icon, label, active }: any) {
+function UtilityButton({ icon, label, active, onClick, disabled }: any) {
   return (
-    <button className={cn(
-      "flex items-center gap-2.5 px-3 py-1.5 transition-all text-[11px] font-semibold tracking-wide rounded-lg group",
-      active 
-        ? "bg-accent/20 text-accent border border-accent/40 shadow-[0_0_12px_rgba(59,130,246,0.2)]" 
-        : "text-foreground/40 hover:bg-white/5 hover:text-foreground/80"
-    )}>
+    <button 
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        "flex items-center gap-2.5 px-3 py-1.5 transition-all text-[11px] font-semibold tracking-wide rounded-lg group",
+        active 
+          ? "bg-accent/20 text-accent border border-accent/40 shadow-[0_0_12px_rgba(59,130,246,0.2)]" 
+          : "text-foreground/40 hover:bg-white/5 hover:text-foreground/80",
+        disabled && "opacity-50 cursor-not-allowed"
+      )}
+    >
       <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
         {icon}
       </motion.div>

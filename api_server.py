@@ -176,10 +176,14 @@ async def export_session(session_id: str):
     )
 
 @app.get("/sessions")
-
 async def list_sessions():
-    sessions = os.listdir(DATA_ROOT)
-    return {"sessions": sessions}
+    # Sort sessions by modification time (most recent first)
+    try:
+        sessions = [s for s in os.listdir(DATA_ROOT) if os.path.isdir(os.path.join(DATA_ROOT, s))]
+        sessions.sort(key=lambda x: os.path.getmtime(os.path.join(DATA_ROOT, x)), reverse=True)
+        return {"sessions": sessions}
+    except Exception as e:
+        return {"sessions": [], "error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
