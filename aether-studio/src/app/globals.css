@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #121213; /* Postshot Black */
+  --color-foreground: #d1d1d1; /* Soft Technical Gray */
+  
+  --color-accent: #58a6ff; /* Ice Blue */
+  --color-accent-muted: #1a2a3a;
+  
+  --color-panel: #1a1a1c;
+  --color-panel-bright: #232325;
+  --color-border: #2a2a2d;
+  --color-border-bright: #404043;
+}
+
+:root {
+  --background: #121213;
+  --foreground: #d1d1d1;
+  --accent: #58a6ff;
+  --border: #2a2a2d;
+}
+
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: #404043 transparent;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-inter);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  font-size: 11px; /* Pro-Density */
+}
+
+/* HIGH-DENSITY WORKSTATION PANELS */
+.pro-panel {
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-border);
+}
+
+.pro-header {
+  background-color: var(--color-panel-bright);
+  border-bottom: 1px solid var(--color-border);
+  height: 24px; /* Very small/dense */
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: #888;
+}
+
+/* Postshot Style Tabs */
+.pro-tabs {
+  display: flex;
+  background: #1a1a1c;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pro-tab {
+  padding: 4px 12px;
+  font-family: inherit;
+  font-size: 10px;
+  border-right: 1px solid var(--color-border);
+  color: #666;
+  cursor: pointer;
+}
+
+.pro-tab.active {
+  background: var(--color-panel-bright);
+  color: var(--color-foreground);
+  border-bottom: 1px solid var(--color-accent);
+}
+
+/* TECHNICAL WIDGETS */
+.pro-input {
+  @apply bg-[#0d0d0f] border border-border text-foreground px-1.5 py-0.5 font-mono text-[10px] w-full focus:border-accent outline-none focus:ring-1 focus:ring-accent/20;
+}
+
+.pro-btn {
+  @apply px-2 py-0.5 bg-panel-bright border border-border text-[#aaa] hover:bg-border-bright hover:text-white transition-all font-mono text-[10px] uppercase tracking-tighter flex items-center gap-1;
+}
+
+.pro-btn-active {
+  @apply bg-accent/10 border-accent/40 text-accent;
+}
+
+/* Hierarchy Tree Item */
+.tree-item {
+  @apply flex items-center gap-1.5 px-2 py-0.5 hover:bg-white/5 cursor-pointer text-foreground/70 font-mono text-[10px];
+}
+
+.tree-item-active {
+  @apply bg-accent/20 text-accent font-bold border-l border-accent;
+}
+
+/* Video Timeline Scrubber */
+.timeline-bg {
+  background: linear-gradient(180deg, #18191b 0%, #121213 100%);
+  border-top: 1px solid #2a2a2d;
+}
+
+/* Scrollbars - Ultra Minimal */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
