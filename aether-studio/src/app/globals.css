@@ -42,20 +42,20 @@ body {
   font-size: 11px;
 }
 
-.glass-panel {
+@utility glass-panel {
   @apply backdrop-blur-xl bg-panel border border-border shadow-[0_8px_32px_rgba(0,0,0,0.4)];
 }
 
-.glow-accent {
+@utility glow-accent {
   box-shadow: 0 0 15px var(--color-accent-glow);
 }
 
 /* HIGH-DENSITY WORKSTATION PANELS */
-.pro-panel {
+@utility pro-panel {
   @apply backdrop-blur-md bg-panel border border-border rounded-xl shadow-lg;
 }
 
-.pro-header {
+@utility pro-header {
   @apply bg-panel-bright/80 border-b border-border h-7 flex items-center px-3 font-mono text-[10px] uppercase tracking-wider text-foreground/50 rounded-t-xl;
 }
 

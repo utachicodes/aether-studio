@@ -48,56 +48,70 @@ class SessionManager:
         return "processing"
 
 @app.post("/upload")
-async def upload_data(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
+async def upload_data(background_tasks: BackgroundTasks, files: list[UploadFile] = File(...)):
     session_id = str(uuid.uuid4())
     manager = SessionManager(session_id)
+    manager.write_log(f"UPLOAD_STARTED: {len(files)} files received")
+
+    image_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+    video_extensions = {".mp4", ".mov", ".avi", ".mkv", ".webm"}
     
-    file_ext = os.path.splitext(file.filename)[1].lower()
+    images_dir = os.path.join(manager.path, "images")
+    os.makedirs(images_dir, exist_ok=True)
     
-    if file_ext == ".zip":
-        zip_path = os.path.join(manager.path, "input_images.zip")
-        with open(zip_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+    video_to_process = None
+    image_count = 0
+    zip_found = False
+
+    for file in files:
+        file_ext = os.path.splitext(file.filename)[1].lower()
         
-        manager.write_log("ZIP_UPLOADED_EXTRACTING")
-        valid_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
-        
-        try:
-            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                temp_extract = os.path.join(manager.path, "temp_extract")
-                os.makedirs(temp_extract, exist_ok=True)
-                zip_ref.extractall(temp_extract)
-                
-                images_dir = os.path.join(manager.path, "images")
-                os.makedirs(images_dir, exist_ok=True)
-                
-                image_count = 0
-                for root, _, files in os.walk(temp_extract):
-                    for f in sorted(files):
-                        if os.path.splitext(f)[1].lower() in valid_extensions:
-                            # Normalize filename for consistent sorting in the pipeline
-                            new_name = f"view_{image_count:05d}{os.path.splitext(f)[1].lower()}"
-                            shutil.move(os.path.join(root, f), os.path.join(images_dir, new_name))
-                            image_count += 1
-                
-                # Cleanup
-                shutil.rmtree(temp_extract)
-                
-                if image_count == 0:
-                    manager.write_log("ERROR: No valid images found in ZIP")
-                    return {"error": "No valid images (.jpg, .png, etc.) found in the uploaded ZIP."}
-                
-                manager.write_log(f"IMAGES_READY: {image_count} images prepared from ZIP")
-                background_tasks.add_task(run_processing_pipeline, session_id, skip_extraction=True)
-        except Exception as e:
-            manager.write_log(f"ERROR: ZIP processing failed: {str(e)}")
-            return {"error": f"Failed to process ZIP: {str(e)}"}
+        if file_ext == ".zip":
+            zip_found = True
+            zip_path = os.path.join(manager.path, "input_images.zip")
+            with open(zip_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            
+            # Extract ZIP content
+            try:
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    temp_extract = os.path.join(manager.path, "temp_extract")
+                    os.makedirs(temp_extract, exist_ok=True)
+                    zip_ref.extractall(temp_extract)
+                    
+                    for root, _, sub_files in os.walk(temp_extract):
+                        for f in sorted(sub_files):
+                            if os.path.splitext(f)[1].lower() in image_extensions:
+                                new_name = f"view_{image_count:05d}{os.path.splitext(f)[1].lower()}"
+                                shutil.move(os.path.join(root, f), os.path.join(images_dir, new_name))
+                                image_count += 1
+                    shutil.rmtree(temp_extract)
+            except Exception as e:
+                manager.write_log(f"ERROR: ZIP processing failed: {str(e)}")
+
+        elif file_ext in video_extensions:
+            video_to_process = os.path.join(manager.path, f"input_video{file_ext}")
+            with open(video_to_process, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            manager.write_log(f"VIDEO_SAVED: {file.filename}")
+
+        elif file_ext in image_extensions:
+            new_name = f"view_{image_count:05d}{file_ext}"
+            with open(os.path.join(images_dir, new_name), "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            image_count += 1
+
+    if zip_found or (image_count > 0 and not video_to_process):
+        if image_count == 0:
+            manager.write_log("ERROR: No valid images found")
+            return {"error": "No valid data found."}
+        manager.write_log(f"IMAGES_READY: {image_count} total images prepared")
+        background_tasks.add_task(run_processing_pipeline, session_id, skip_extraction=True)
+    elif video_to_process:
+        manager.write_log("READY_FOR_EXTRACTION")
+        background_tasks.add_task(run_processing_pipeline, session_id, skip_extraction=False, video_filename=os.path.basename(video_to_process))
     else:
-        video_path = os.path.join(manager.path, "input_video.mp4")
-        with open(video_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        manager.write_log("VIDEO_UPLOADED")
-        background_tasks.add_task(run_processing_pipeline, session_id, skip_extraction=False)
+        return {"error": "Unsupported file format. Please upload images, videos, or a ZIP archive."}
     
     return {"session_id": session_id, "status": "processing"}
 
@@ -110,13 +124,13 @@ async def get_status(session_id: str):
         "log": open(manager.log_file, "r").readlines() if os.path.exists(manager.log_file) else []
     }
 
-def run_processing_pipeline(session_id: str, skip_extraction: bool = False):
+def run_processing_pipeline(session_id: str, skip_extraction: bool = False, video_filename: str = "input_video.mp4"):
     manager = SessionManager(session_id)
     output_dir = manager.path
     
     if not skip_extraction:
-        video_path = os.path.join(manager.path, "input_video.mp4")
-        manager.write_log("EXTRACTING_FRAMES")
+        video_path = os.path.join(manager.path, video_filename)
+        manager.write_log(f"EXTRACTING_FRAMES: {video_filename}")
         proc = subprocess.run([
             "python", "scripts/video_processor.py",
             "--video", video_path,

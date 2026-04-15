@@ -69,12 +69,14 @@ export default function Home() {
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+ 
     setUploading(true);
     const formData = new FormData();
-    formData.append("file", file);
+    for (let i = 0; i < files.length; i++) {
+        formData.append("files", files[i]);
+    }
 
     try {
       const res = await fetch(`${API_BASE}/upload`, {
@@ -147,7 +149,8 @@ export default function Home() {
             type="file" 
             ref={fileInputRef} 
             className="hidden" 
-            accept=".zip,.mp4" 
+            accept=".zip,.mp4,.mov,.avi,.mkv,.png,.jpg,.jpeg,.webp" 
+            multiple
             onChange={handleFileChange} 
           />
           <UtilityButton icon={<Play size={14}/>} label="Training..." active />
