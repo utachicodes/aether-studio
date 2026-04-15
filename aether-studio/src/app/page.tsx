@@ -151,8 +151,8 @@ export default function Home() {
             onChange={handleFileChange} 
           />
           <UtilityButton icon={<Play size={14}/>} label="Training..." active />
-          <UtilityButton icon={<Camera size={14}/>} label="Viewports" />
-          <UtilityButton icon={<Layers size={14}/>} label="Render" />
+          <UtilityButton icon={<Layers size={14}/>} label="Neural Flow" />
+          <UtilityButton icon={<Database size={14}/>} label="Data Pool" />
         </div>
         
         <div className="flex items-center gap-6 text-[10px] font-mono">
@@ -175,10 +175,8 @@ export default function Home() {
            {/* VIEWPORT HUD */}
            <div className="absolute top-4 left-4 z-40 flex gap-4 pointer-events-none">
               <div className="flex items-center gap-3 px-4 py-2 bg-black/40 border border-white/5 backdrop-blur-xl rounded-2xl shadow-2xl">
-                 <Camera size={14} className="text-accent" />
-                 <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-foreground/80">POV: Default Camera</span>
-                 <div className="mx-1 w-px h-3 bg-white/10" />
-                 <ChevronDown size={12} className="text-foreground/40" />
+                 <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                 <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-foreground/80">RECONSTRUCTION PROTOCOL: ACTIVE</span>
               </div>
            </div>
 
@@ -196,7 +194,7 @@ export default function Home() {
            {/* VIEWPORT CONTROLS (Left Floating) */}
            <div className="absolute top-1/2 -translate-y-1/2 left-4 z-40 flex flex-col gap-2 p-1.5 bg-black/20 backdrop-blur-md rounded-2xl border border-white/5 shadow-2xl transition-all hover:bg-black/30">
               <SideTool icon={<Box size={16} />} />
-              <SideTool icon={<Camera size={16} />} />
+              <SideTool icon={<Layers size={16} />} />
               <SideTool icon={<Search size={16} />} />
               <div className="h-px w-6 bg-white/5 mx-auto my-1" />
               <SideTool icon={<Plus size={16} />} />
@@ -206,12 +204,12 @@ export default function Home() {
         {/* PRO SIDEBAR (Right) */}
         <aside className="w-[320px] flex flex-col gap-1.5 shrink-0 overflow-hidden">
            
-           {/* SCENE HIERARCHY (Top) */}
+           {/* SESSION EXPLORER (Top) */}
            <div className="flex-1 glass-panel rounded-2xl flex flex-col overflow-hidden">
               <div className="pro-header flex justify-between rounded-t-2xl">
                  <div className="flex items-center gap-2">
-                   <Layers size={14} className="text-accent" />
-                   <span>Hierarchy</span>
+                   <Database size={14} className="text-accent" />
+                   <span>Session Explorer</span>
                  </div>
                  <div className="flex gap-3 text-foreground/40">
                     <Search size={12} className="hover:text-accent transition-colors cursor-pointer" />
@@ -219,8 +217,8 @@ export default function Home() {
                  </div>
               </div>
               <div className="flex-1 overflow-y-auto custom-scrollbar bg-black/5 py-2 space-y-0.5">
-                 <HierarchyNode label="Root Scene" icon={Box} depth={0} onClick={() => setSelectedNode("scene")} active={selectedNode === "scene"} />
-                 <HierarchyNode label="Default Camera" icon={Camera} depth={1} onClick={() => setSelectedNode("camera")} active={selectedNode === "camera"} />
+                 <HierarchyNode label="Active Project" icon={Box} depth={0} onClick={() => setSelectedNode("project")} active={selectedNode === "project"} />
+                 <HierarchyNode label="Point Clouds" icon={Plus} depth={1} onClick={() => setSelectedNode("points")} active={selectedNode === "points"} />
                  <HierarchyNode label="Image Stream" icon={FolderOpen} depth={1} onClick={() => setSelectedNode("images")} active={selectedNode === "images"} />
                  <HierarchyNode label="Neural Field" icon={Layers} depth={1} onClick={() => setSelectedNode("rdnc-field")} active={selectedNode === "rdnc-field"} />
               </div>
@@ -287,7 +285,7 @@ export default function Home() {
                           </div>
                           <ProToggle label="Store Context" active={params.storeContext} />
                           <button className="w-full mt-4 py-1.5 border border-border bg-panel-bright text-foreground/50 hover:text-foreground text-[10px] font-mono uppercase tracking-tighter">
-                             Reset Radiance Field
+                             Flush Reconstruction Data
                           </button>
                        </ParameterGroup>
                     </div>

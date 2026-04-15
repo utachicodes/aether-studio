@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronRight, Layers, Layout, Target, Monitor } from "lucide-react";
+import { X, ChevronRight, Layers, Layout, Target, Monitor, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Step {
@@ -13,23 +13,23 @@ interface Step {
 
 const STEPS: Step[] = [
   {
-    title: "Pro Workstation Architecture",
-    description: "Welcome to Aether-Scan Pro. This environment is designed for high-density neural reconstruction, mirroring industrial 3D tools.",
+    title: "Reconstruction Protocol",
+    description: "Welcome to Aether-Scan Pro. This system is optimized for high-fidelity 3D reconstruction and neural data synthesis.",
     icon: <Layout className="text-accent" size={32} />
   },
   {
-    title: "Scene Hierarchy",
-    description: "Manage your project nodes in the top-right pane. Navigate between your camera sets, image streams, and the active neural field.",
-    icon: <Layers className="text-accent" size={32} />
+    title: "Session Explorer",
+    description: "Orchestrate your reconstruction layers in the top-right pane. Navigate through point clouds, image sets, and neural fields.",
+    icon: <Database className="text-accent" size={32} />
   },
   {
-    title: "Neural Parameters",
-    description: "Fine-tune your Splatting model in the parameters pane. Adjust SH Degree, Splat counts, and training hooks in real-time.",
+    title: "Neural Volumetrics",
+    description: "Calibrate your reconstruction parameters live. High-precision control over SH Degree, Splat counts, and training hooks.",
     icon: <Target className="text-accent" size={32} />
   },
   {
-    title: "Unified Capture",
-    description: "Use the industrial timeline and utility bar to orchestrate your training. Monitor convergence telemetry live in the viewport.",
+    title: "Convergence Telemetry",
+    description: "Monitor the evolution of your neural field in real-time. Track loss reduction and volumetric convergence live in the viewport.",
     icon: <Monitor className="text-accent" size={32} />
   }
 ];
