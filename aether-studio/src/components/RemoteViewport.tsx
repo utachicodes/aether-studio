@@ -3,7 +3,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { Loader2, Box, Zap } from "lucide-react";
+import { Loader2, Zap, AlertTriangle, Radio } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface RemoteViewportProps {
   socketUrl: string;
@@ -35,46 +36,54 @@ export default function RemoteViewport({ socketUrl, active }: RemoteViewportProp
     const loader = new THREE.TextureLoader();
 
     function connect() {
+      if (wsRef.current) wsRef.current.close();
       setStatus("connecting");
-      const ws = new WebSocket(socketUrl);
-      ws.binaryType = "blob";
-      wsRef.current = ws;
+      
+      try {
+        const ws = new WebSocket(socketUrl);
+        ws.binaryType = "blob";
+        wsRef.current = ws;
 
-      ws.onopen = () => {
-        setStatus("connected");
-      };
+        ws.onopen = () => {
+          setStatus("connected");
+          console.log("Remote Viewport: Connected to Splat Engine");
+        };
 
-      ws.onmessage = async (event) => {
-        if (event.data instanceof Blob) {
-          const url = URL.createObjectURL(event.data);
-          loader.load(url, (texture) => {
-            texture.colorSpace = THREE.SRGBColorSpace;
-            scene.background = texture;
-            URL.revokeObjectURL(url);
-          });
-        }
-        
-        // Always send back the current pose to trigger the next frame
-        if (ws.readyState === WebSocket.OPEN) {
-          const data = {
-            res_x: canvas.clientWidth,
-            res_y: canvas.clientHeight,
-            state: "start",
-            pose: camera.matrixWorld.elements,
-            snapToLast: false
-          };
-          ws.send(JSON.stringify(data));
-        }
-      };
+        ws.onmessage = async (event) => {
+          if (event.data instanceof Blob) {
+            const url = URL.createObjectURL(event.data);
+            loader.load(url, (texture) => {
+              texture.colorSpace = THREE.SRGBColorSpace;
+              scene.background = texture;
+              URL.revokeObjectURL(url);
+            });
+          }
+          
+          if (ws.readyState === WebSocket.OPEN) {
+            const data = {
+              res_x: canvas.clientWidth,
+              res_y: canvas.clientHeight,
+              state: "start",
+              pose: camera.matrixWorld.elements,
+              snapToLast: false
+            };
+            ws.send(JSON.stringify(data));
+          }
+        };
 
-      ws.onclose = () => {
+        ws.onclose = () => {
+          setStatus("disconnected");
+          setTimeout(() => {
+            if (active) connect();
+          }, 3000); // Faster reconnect
+        };
+
+        ws.onerror = () => {
+          setStatus("disconnected");
+        };
+      } catch (e) {
         setStatus("disconnected");
-        setTimeout(connect, 2000);
-      };
-
-      ws.onerror = (err) => {
-        console.error("Remote Viewport Error:", err);
-      };
+      }
     }
 
     connect();
@@ -86,6 +95,11 @@ export default function RemoteViewport({ socketUrl, active }: RemoteViewportProp
         camera.aspect = canvas.clientWidth / canvas.clientHeight;
         camera.updateProjectionMatrix();
       }
+
+      if (status !== 'connected') {
+        scene.background = new THREE.Color(0x050505);
+      }
+
       controls.update();
       renderer.render(scene, camera);
       animationId = requestAnimationFrame(animate);
@@ -94,32 +108,67 @@ export default function RemoteViewport({ socketUrl, active }: RemoteViewportProp
 
     return () => {
       cancelAnimationFrame(animationId);
-      wsRef.current?.close();
+      if(wsRef.current) {
+        wsRef.current.onclose = null;
+        wsRef.current.close();
+      }
       renderer.dispose();
+      scene.clear();
     };
-  }, [socketUrl, active]);
+  }, [socketUrl, active]); 
 
   return (
     <div className="relative w-full h-full bg-black flex items-center justify-center overflow-hidden">
-      <canvas ref={canvasRef} className="w-full h-full" />
+      {/* SCANLINE EFFECT OVERLAY */}
+      <div className="absolute inset-0 pointer-events-none z-10 opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] bg-[length:100%_2px,3px_100%]" />
+      
+      <canvas ref={canvasRef} className={cn("w-full h-full transition-opacity duration-700", status === 'connected' ? "opacity-100" : "opacity-0")} />
       
       {status !== "connected" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm z-20 pointer-events-none">
-          <Loader2 className="animate-spin text-accent mb-4" size={32} />
-          <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em]">
-            Bridging Live 3D Stream...
-          </span>
-          <span className="text-[8px] font-mono text-foreground/40 mt-1">
-            TARGET: {socketUrl}
-          </span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
+          {/* INDUSTRIAL OFFLINE UI */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.05)_0%,transparent_70%)]" />
+          
+          <div className="relative flex flex-col items-center gap-6">
+            <div className="relative">
+              <div className="absolute inset-0 animate-ping bg-accent/20 rounded-full" />
+              <div className="relative w-16 h-16 border border-accent/30 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-xl">
+                 <Radio className="text-accent animate-pulse" size={24} />
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-[14px] font-black text-white tracking-[0.4em] uppercase">SYSTEM_OFFLINE</span>
+              <div className="flex items-center gap-3 px-3 py-1 bg-accent/10 border border-accent/20 rounded text-accent">
+                <AlertTriangle size={12} />
+                <span className="text-[9px] font-mono font-bold uppercase tracking-widest">
+                  {status === 'connecting' ? 'Establishing Backbone Link...' : 'Signal Stream Interrupted'}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-8 mt-4 border-t border-white/5 pt-6 w-64 uppercase font-mono text-[8px] tracking-tighter text-foreground/20">
+              <div className="flex flex-col gap-1">
+                 <span>Engine_Port: 6009</span>
+                 <span>Protocol: WSS/NVT</span>
+              </div>
+              <div className="flex flex-col gap-1 text-right">
+                 <span>Status: {status.toUpperCase()}</span>
+                 <span>Target: VIEWPORT_01</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Mini Viewport Legend */}
-      <div className="absolute bottom-4 left-4 flex gap-4 pointer-events-none z-10">
-         <div className="flex items-center gap-2 px-2 py-1 bg-black/40 border border-white/5">
-            <Zap size={10} className={status === 'connected' ? "text-yellow-400" : "text-foreground/20"} />
-            <span className="text-[8px] font-mono uppercase text-foreground/60">Splat_Engine: {status}</span>
+      <div className="absolute bottom-6 left-6 flex gap-4 pointer-events-none z-30">
+         <div className="flex items-center gap-3 px-3 py-1.5 bg-black/60 border border-white/5 rounded-md backdrop-blur-md">
+            <Zap size={12} className={cn("transition-colors duration-500", status === 'connected' ? "text-yellow-400 fill-yellow-400" : "text-foreground/20")} />
+            <div className="flex flex-col">
+               <span className="text-[9px] font-bold uppercase text-foreground/80 leading-none mb-1">Engine Control</span>
+               <span className="text-[7px] font-mono uppercase text-foreground/40 leading-none">Status: {status}</span>
+            </div>
          </div>
       </div>
     </div>
