@@ -52,6 +52,24 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMuted, setIsMuted] = useState(false);
 
+  // Auto-fetch last session and activate engine
+  useEffect(() => {
+    const initializeEngine = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/sessions/last`);
+        const data = await res.json();
+        if (data.session_id) {
+          setActiveSession(data.session_id);
+          // Trigger the backend to start the viewer for this session
+          fetch(`${API_BASE}/viewer/start/${data.session_id}`).catch(() => {});
+        }
+      } catch (err) {
+        console.error("Failed to initialize neural engine:", err);
+      }
+    };
+    initializeEngine();
+  }, []);
+
   // Timeline Progress Timer
   useEffect(() => {
     let interval: NodeJS.Timeout;

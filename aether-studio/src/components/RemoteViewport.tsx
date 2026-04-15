@@ -3,7 +3,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { Loader2, Zap, AlertTriangle, Radio } from "lucide-react";
+import { Loader2, Zap, AlertTriangle, Radio, Cpu } from "lucide-react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface RemoteViewportProps {
@@ -125,39 +126,49 @@ export default function RemoteViewport({ socketUrl, active }: RemoteViewportProp
       <canvas ref={canvasRef} className={cn("w-full h-full transition-opacity duration-700", status === 'connected' ? "opacity-100" : "opacity-0")} />
       
       {status !== "connected" && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
-          {/* INDUSTRIAL OFFLINE UI */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.05)_0%,transparent_70%)]" />
+        <div className="absolute inset-0 bg-[#050505] flex flex-col items-center justify-center overflow-hidden z-20">
+          {/* Neural Calibration Grid */}
+          <div className="absolute inset-0 opacity-10 pointer-events-none" 
+               style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, #3b82f6 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>
           
-          <div className="relative flex flex-col items-center gap-6">
-            <div className="relative">
-              <div className="absolute inset-0 animate-ping bg-accent/20 rounded-full" />
-              <div className="relative w-16 h-16 border border-accent/30 rounded-full flex items-center justify-center bg-black/40 backdrop-blur-xl">
-                 <Radio className="text-accent animate-pulse" size={24} />
+          <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative z-10 flex flex-col items-center gap-6"
+          >
+              <div className="relative">
+                  <motion.div 
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                      className="w-24 h-24 border border-blue-500/20 rounded-full border-t-blue-500 flex items-center justify-center"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                      <Cpu className="text-blue-500/50" size={32} />
+                  </div>
               </div>
-            </div>
 
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-[14px] font-black text-white tracking-[0.4em] uppercase">SYSTEM_OFFLINE</span>
-              <div className="flex items-center gap-3 px-3 py-1 bg-accent/10 border border-accent/20 rounded text-accent">
-                <AlertTriangle size={12} />
-                <span className="text-[9px] font-mono font-bold uppercase tracking-widest">
-                  {status === 'connecting' ? 'Establishing Backbone Link...' : 'Signal Stream Interrupted'}
-                </span>
+              <div className="flex flex-col items-center gap-1 text-center">
+                  <h2 className="text-sm font-mono tracking-[0.3em] text-blue-400 uppercase font-bold">ENGINE_STANDBY</h2>
+                  <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Awaiting Data Ingest or Session Activation</p>
               </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-8 mt-4 border-t border-white/5 pt-6 w-64 uppercase font-mono text-[8px] tracking-tighter text-foreground/20">
-              <div className="flex flex-col gap-1">
-                 <span>Engine_Port: 6009</span>
-                 <span>Protocol: WSS/NVT</span>
+              <div className="flex gap-4 border border-white/5 bg-white/5 p-4 rounded-lg backdrop-blur-md">
+                  <div className="flex flex-col gap-1">
+                      <span className="text-[9px] text-zinc-500 font-mono uppercase">Calibration</span>
+                      <span className="text-[11px] text-blue-400 font-mono">READY</span>
+                  </div>
+                  <div className="w-[1px] bg-white/10" />
+                  <div className="flex flex-col gap-1">
+                      <span className="text-[9px] text-zinc-500 font-mono uppercase">VRAM Status</span>
+                      <span className="text-[11px] text-zinc-300 font-mono">OPTIMIZED</span>
+                  </div>
+                  <div className="w-[1px] bg-white/10" />
+                  <div className="flex flex-col gap-1">
+                      <span className="text-[9px] text-zinc-500 font-mono uppercase">Port</span>
+                      <span className="text-[11px] text-zinc-300 font-mono">6009/TCP</span>
+                  </div>
               </div>
-              <div className="flex flex-col gap-1 text-right">
-                 <span>Status: {status.toUpperCase()}</span>
-                 <span>Target: VIEWPORT_01</span>
-              </div>
-            </div>
-          </div>
+          </motion.div>
         </div>
       )}
 

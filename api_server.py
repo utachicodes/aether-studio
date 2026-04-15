@@ -8,6 +8,10 @@ import subprocess
 import json
 import time
 import zipfile
+import signal
+
+# Track the active viewer process globally
+active_viewer_process = None
 
 
 app = FastAPI(title="Aether-Scan API")
@@ -161,6 +165,8 @@ def run_processing_pipeline(session_id: str, skip_extraction: bool = False, vide
     train_proc.wait()
     if train_proc.returncode == 0:
         manager.write_log("COMPLETE")
+        # Auto-start viewer for the newly completed session
+        subprocess.Popen(["python", "api_server.py", "trigger_viewer", session_id]) 
     else:
         manager.write_log(f"ERROR: Reconstruction failed with code {train_proc.returncode}")
 
@@ -198,6 +204,58 @@ async def list_sessions():
         return {"sessions": sessions}
     except Exception as e:
         return {"sessions": [], "error": str(e)}
+
+@app.get("/sessions/last")
+async def get_last_session():
+    try:
+        sessions = [s for s in os.listdir(DATA_ROOT) if os.path.isdir(os.path.join(DATA_ROOT, s))]
+        if not sessions:
+            return {"session_id": None}
+        sessions.sort(key=lambda x: os.path.getmtime(os.path.join(DATA_ROOT, x)), reverse=True)
+        return {"session_id": sessions[0]}
+    except:
+        return {"session_id": None}
+
+@app.get("/viewer/start/{session_id}")
+async def start_viewer(session_id: str):
+    global active_viewer_process
+    manager = SessionManager(session_id)
+    if not os.path.exists(manager.path):
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    # Kill existing viewer if running
+    if active_viewer_process:
+        try:
+            active_viewer_process.terminate()
+        except:
+            pass
+    
+    # Start the standalone viewer script
+    active_viewer_process = subprocess.Popen([
+        "python", "view_session.py",
+        "--session_dir", manager.path,
+        "--port", "6009"
+    ])
+    
+    return {"status": "started", "session_id": session_id}
+
+@app.on_event("startup")
+async def startup_event():
+    # Auto-load the last session into the engine on server start
+    try:
+        sessions = [s for s in os.listdir(DATA_ROOT) if os.path.isdir(os.path.join(DATA_ROOT, s))]
+        if sessions:
+            sessions.sort(key=lambda x: os.path.getmtime(os.path.join(DATA_ROOT, x)), reverse=True)
+            last_session = sessions[0]
+            print(f"INFO: Auto-activating Neural Engine for session: {last_session}")
+            # Start viewer in background manually here to avoid async issues during startup
+            subprocess.Popen([
+                "python", "view_session.py",
+                "--session_dir", os.path.join(DATA_ROOT, last_session),
+                "--port", "6009"
+            ])
+    except Exception as e:
+        print(f"WARNING: Startup viewer activation failed: {e}")
 
 if __name__ == "__main__":
     import uvicorn

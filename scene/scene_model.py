@@ -23,12 +23,24 @@ import torch.nn.functional as F
 import numpy as np
 
 import lpips
-from fused_ssim import fused_ssim
-from diff_gaussian_rasterization import (
-    GaussianRasterizationSettings,
-    GaussianRasterizer,
-)
-from simple_knn._C import distIndex2
+try:
+    from fused_ssim import fused_ssim
+except ImportError:
+    fused_ssim = None
+try:
+    from diff_gaussian_rasterization import (
+        GaussianRasterizationSettings,
+        GaussianRasterizer,
+    )
+except ImportError:
+    GaussianRasterizationSettings = None
+    GaussianRasterizer = None
+    print("WARNING: diff_gaussian_rasterization not found. Neural Engine will run in STANDBY mode.")
+
+try:
+    from simple_knn._C import distIndex2
+except ImportError:
+    distIndex2 = None
 from poses.feature_detector import DescribedKeypoints
 from poses.matcher import Matcher
 from poses.guided_mvs import GuidedMVS
