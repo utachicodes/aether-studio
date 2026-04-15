@@ -1,7 +1,7 @@
 {
   "name": "aether-studio",
   "version": "0.1.0",
-  "author": "Abdou (utachicodes)",
+  "author": "utachicodes",
   "private": true,
   "scripts": {
     "dev": "next dev",

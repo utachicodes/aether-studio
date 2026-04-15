@@ -96,4 +96,4 @@ pip install -r requirements.txt
 ### Finalize Reconstruction
 Aether-Scan Studio is an advanced neural reconstruction platform built for the next generation of spatial intelligence.
 
-Developed and Maintained by **Abdou @ utachicodes**.
+Developed and Maintained by **utachicodes**.
